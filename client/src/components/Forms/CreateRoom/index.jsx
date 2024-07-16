@@ -1,24 +1,37 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-const CreateRoomForm = ({uuid,socket,setUser}) => {
-  const [roomId,setRoomId] = useState(uuid())
-  const [name,setName] = useState("")
-  const navigate= useNavigate()
-  const handleCreateRoom = (e)=>{
-    e.preventDefault()
+
+const CreateRoomForm = ({ uuid, socket, setUser }) => {
+  const [roomId, setRoomId] = useState(uuid());
+  const [name, setName] = useState("");
+  const navigate = useNavigate();
+
+  const handleCreateRoom = (e) => {
+    e.preventDefault();
 
     const roomData = {
       name,
       roomId,
       userId: uuid(),
-      host:true,
-      presenter:true
-    }
-    setUser(roomData)
-    navigate(`/${roomId}`)
-    console.log(roomData)
-    socket.emit("userJoined",roomData)
-  }
+      host: true,
+      presenter: true,
+    };
+    setUser(roomData);
+    navigate(`/${roomId}`);
+    console.log(roomData);
+    socket.emit("userJoined", roomData);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(roomId).then(
+      () => {
+        console.log("Room ID copied to clipboard!");
+      },
+      (err) => {
+        console.error("Failed to copy: ", err);
+      }
+    );
+  };
 
   return (
     <form className="w-full mt-5">
@@ -28,7 +41,7 @@ const CreateRoomForm = ({uuid,socket,setUser}) => {
           className="w-full p-2 border border-gray-300 rounded my-2"
           placeholder="Enter Your Name"
           value={name}
-          onChange={(e)=>setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
         />
       </div>
       <div className="mb-4">
@@ -40,17 +53,18 @@ const CreateRoomForm = ({uuid,socket,setUser}) => {
             className="flex-grow p-2 border border-gray-300 rounded"
             placeholder="Generate room Code"
           />
-          <div className="flex gap-1 ">
+          <div className="flex gap-1">
             <button
               className="px-4 py-2 bg-cyan-600 text-white rounded hover:bg-cyan-400 transform transition-transform duration-150 active:scale-95"
               type="button"
-              onClick={()=>setRoomId(uuid())}
+              onClick={() => setRoomId(uuid())}
             >
               Generate
             </button>
             <button
               className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-400 transform transition-transform duration-150 active:scale-95"
               type="button"
+              onClick={handleCopy}
             >
               Copy
             </button>
@@ -59,7 +73,8 @@ const CreateRoomForm = ({uuid,socket,setUser}) => {
       </div>
       <button
         className="w-full px-4 py-2 mt-10 bg-cyan-600 text-white rounded hover:bg-cyan-400 transform transition-transform duration-150 active:scale-95"
-        type="button" onClick={handleCreateRoom}
+        type="button"
+        onClick={handleCreateRoom}
       >
         Generate Room
       </button>

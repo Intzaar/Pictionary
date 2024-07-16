@@ -14,7 +14,9 @@ const Board = ({ canvasRef, ctxRef, elements, setElements, tool, color, user, so
     return (
       <div className="h-full overflow-hidden">
         {img ? (
-          <img src={img} alt="presenter Screen" style={{height:window.innerHeight,width:"200%"}}/>
+          <img src={img} alt="presenter Screen" style={{
+            maxWidth: "1000%",
+            height: "auto",}}/>
         ) : (
           <p>Loading...</p>
         )}

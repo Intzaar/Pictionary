@@ -1,7 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Board from "../../components/Canvas";
+import words from "../../components/words.json";
 
-const RoomPage = ({ user,socket }) => {
+const RoomPage = ({ user, socket, users }) => {
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
   const [elements, setElements] = useState([]);
@@ -9,6 +10,32 @@ const RoomPage = ({ user,socket }) => {
   const [color, setColor] = useState("#000000");
   const [history, setHistory] = useState([]);
   const [clearHistory, setClearHistory] = useState([]);
+  const [guess, setGuess] = useState("");
+  const [openedUserTab, setOpenedUserTab] = useState(false);
+  const [secretWord, setSecretWord] = useState("");
+
+  const getRandomWord = () => {
+    return words[Math.floor(Math.random() * words.length)];
+  };
+
+  useEffect(() => {
+    const newWord = getRandomWord();
+    setSecretWord(newWord);
+
+    socket.on("guessResponse", (data) => {
+      const { name } = data;
+      if (data.guess != secretWord) {
+        return;
+      }
+      alert(`${name} guessed the word ${secretWord} correctly!`);
+      const newWord = getRandomWord();
+      setSecretWord(newWord);
+    });
+
+    return () => {
+      socket.off("guessResponse");
+    };
+  }, [socket, secretWord]);
 
   const handleClearCanvas = () => {
     const canvas = canvasRef.current;
@@ -38,12 +65,60 @@ const RoomPage = ({ user,socket }) => {
     }
   };
 
+  const handleGuessSubmit = () => {
+    if (guess.trim()) {
+      socket.emit("guess", { guess });
+      setGuess("");
+    }
+  };
+
   return (
     <div className="text-center font-sans">
+      <button
+        type="button"
+        className="btn bg-cyan-700 text-white rounded hover:bg-cyan-500 active:scale-90"
+        style={{
+          display: "block",
+          position: "absolute",
+          top: "5%",
+          left: "3%",
+          height: "40px",
+          width: "100px",
+        }}
+        onClick={() => setOpenedUserTab(true)}
+      >
+        Users
+      </button>
+      {openedUserTab && (
+        <div
+          className="fixed top-0 h-full text-white bg-black"
+          style={{ width: "250px", left: "0%" }}
+        >
+          <button
+            type="button"
+            onClick={() => setOpenedUserTab(false)}
+            className="btn bg-cyan-700 text-white hover:bg-cyan-500 active:scale-90 w-3/5 mt-5 rounded-lg"
+          >
+            Close
+          </button>
+          <div className="w-full mt-5 pt-5">
+            {users.map((usr, index) => (
+              <p key={index * 999} className="my-2 text-center w-full">
+                {usr.name} {user && user.userId === usr.userId && "(You)"}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
       <h1 className="text-6xl">
         Pictionary{" "}
-        <span className="text-lg text-cyan-400">[Players Online: 0]</span>
+        <span className="text-lg text-cyan-400">
+          [Players Online: {users.length}]
+        </span>
       </h1>
+      {user?.presenter && (
+        <h2 className="text-4xl mt-4">Your word: {secretWord}</h2>
+      )}
       {user?.presenter && (
         <div className="flex flex-col md:flex-row justify-center items-center mt-4 mb-5 space-y-4 md:space-y-0 md:space-x-4">
           <div className="flex items-center">
@@ -132,10 +207,30 @@ const RoomPage = ({ user,socket }) => {
             tool={tool}
             color={color}
             user={user}
-            socket = {socket}
+            socket={socket}
           />
         </div>
       </div>
+
+      {!user?.presenter && (
+        <div className="mt-5">
+          <div className="mt-3">
+            <input
+              type="text"
+              placeholder="Type your guess here"
+              value={guess}
+              onChange={(e) => setGuess(e.target.value)}
+              className="border rounded px-3 py-2"
+            />
+            <button
+              onClick={handleGuessSubmit}
+              className="ml-2 px-4 py-2 bg-cyan-700 text-white rounded hover:bg-cyan-500 active:scale-90"
+            >
+              Submit Guess
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
